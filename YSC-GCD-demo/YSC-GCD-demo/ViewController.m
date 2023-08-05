@@ -12,6 +12,8 @@
 
 /* 剩余火车票数 */
 @property (nonatomic, assign) int ticketSurplusCount;
+//gcdTimer
+@property (nonatomic, strong) dispatch_source_t timer;
 
 @end
 
@@ -25,6 +27,10 @@
     
     /* 任务+队列 相关方法 */
     //如果要使用那种方法，那么就将哪一行的注释取消掉，不用了在放回去
+    dispatch_queue_t queue = dispatch_queue_create(@"arno", NULL);
+    dispatch_async(queue, ^{
+        NSLog(@"GCDyong ");
+    });
     
 //    同步执行 + 并发队列
 //    [self syncConcurrent];
@@ -51,11 +57,17 @@
 
 //    [self communication];
     
+    //GCDtimer
+//    [self GCDTimer];
+//    dispatch_resume(_timer);
+//    [NSThread sleepForTimeInterval:5];
+//    dispatch_suspend(_timer);
+//
     
     /* GCD 其他方法 */
     
 //    栅栏方法 dispatch_barrier_async
-    [self barrier];
+//    [self barrier];
     
 //    延时执行方法 dispatch_after
 //    [self after];
@@ -86,6 +98,7 @@
     
 //    线程安全：使用 semaphore 加锁
 //    [self initTicketStatusSave];
+    [self testDeadLock];
 }
 
 
@@ -598,5 +611,23 @@
         dispatch_semaphore_signal(semaphoreLock);
     }
 }
-
+- (void)GCDTimer {
+    dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0);
+    _timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+    dispatch_source_set_timer(_timer, DISPATCH_TIME_NOW, 2.0 * NSEC_PER_SEC, 0.1 * NSEC_PER_SEC);
+    dispatch_source_set_event_handler(_timer, ^{
+        NSLog(@"%@GCDTimer",_timer);
+    });
+ 
+}
+- (void)testDeadLock {
+    dispatch_queue_t queue = dispatch_queue_create("test.queue", DISPATCH_QUEUE_SERIAL);
+    dispatch_sync(queue, ^{
+        [NSThread sleepForTimeInterval:2];
+        dispatch_sync(queue, ^{
+            [NSThread sleepForTimeInterval:2];
+            NSLog(@"%@",[NSThread currentThread]);
+        });
+    });
+}
 @end
